@@ -4,7 +4,7 @@ library(ggplot2)
 # get data loaded in ####
 model.data <- read.csv('generated_data/extracted-data-niw.csv')
 
-##likelihood Normal equal sd##
+##likelihood Normal, equal sd##
 
 log.likelihood<-function(x,mu){
   sigma=10
@@ -49,7 +49,7 @@ linear.piecewise.model.predict<-function(t,a,b,c,d,e){
     rt <-a + b*t
   }
   if(t >= c){
-    rt <-d + e*t
+    rt <-d + e*(t-c+1)
   }
   return(rt)
 }
@@ -58,7 +58,7 @@ exponential.piecewise.model.predict<-function(t,a,b,c,d,e,f,g){
     rt<-a+b*exp(c*t)
   }
   if(t>=d){
-    rt<-e+f*exp(g*t)
+    rt<-e+f*exp(g*(t-d+1))
   }
   return(rt)
 }
@@ -67,7 +67,7 @@ power.piecewise.model.predict<-function(t,a,b,c,d,e,f,g){
     rt<-a + b*t^(c)
   }
   if(t>=d){
-    rt<-e + f*t^(g)
+    rt<-e + f*(t-d+1)^(g)
   }
   return(rt)
 }
@@ -173,10 +173,10 @@ subject.fit.MLE<-function(subject.data){
   # linear<-DEoptim(linear.fit,lower=c(-2001, -27),upper=c(2001,27))
   # exponential<-DEoptim(exponential.fit,lower=c(-2001,-5,-1),upper=c(2001,5,0))
   # power<-DEoptim(power.fit,lower=c(-2001,-5,-1),upper=c(2001,0,0))
-  constant.piecewise<-DEoptim(constant.piecewise.fit,lower=c(-2001,-2001,0),upper=c(2001,2001,72))
-  linear.piecewise<-DEoptim(linear.piecewise.fit,lower = c(-2001,-27,0,-2001,-27),upper=c(2001,27,72,2001,27))
-  exponential.piecewise<-DEoptim(exponential.piecewise.fit,lower = c(-2001,-5,-1,0,-2001,-5,-1),upper=c(2001,5,0,72,2001,5,0))
-  power.piecewise<-DEoptim(power.piecewise.fit,lower = c(-2001,-5,-1,0,-2001,-5,-1),upper=c(2001,0,0,72,2001,0,0))
+  constant.piecewise    <- DEoptim(constant.piecewise.fit,    lower = c(-2001,-2001,0),                          upper=c(2001,2001,72))
+  linear.piecewise      <- DEoptim(linear.piecewise.fit,      lower = c(-2001,-27,0,-2001,-27),                  upper=c(2001,27,72,2001,27))
+  exponential.piecewise <- DEoptim(exponential.piecewise.fit, lower = c(-2001,-1000, -25, 0, -2001, -1000, -25), upper=c(2001,1000,0,72,2001,1000,0))
+  power.piecewise       <- DEoptim(power.piecewise.fit,       lower = c(-2001,-1000, -25, 0, -2001, -1000, -25), upper=c(2001,1000,0,72,2001,1000,0))
   
   # constant.values<-list('intercept'=constant$optim$bestmem[1], 'Likelihood'=constant$optim$bestval)
   # linear.values<-list ('intercept'=linear$optim$bestmem[1],'slope'=linear$optim$bestmem[2], 'Likelihood'=linear$optim$bestval)
@@ -201,9 +201,14 @@ subject.fit.MLE<-function(subject.data){
   return(out)
 }
 
+# fake data to verify that power law is working
+fake.data <- data.frame(t=1:72)
+fake.data$difference <- sapply(fake.data$t,function(x){ return(exponential.piecewise.model.predict(x, -200, -100, -1, 40, 400, -400, -1)) })
+plot(difference ~ t, data=fake.data)
 ## run test case ####
-which.subject <- 28
+which.subject <- 185
 subject.data <- subset(model.data, subject==which.subject)
+subject.data <- fake.data
 fit <- subject.fit.MLE(subject.data)
 
 line.fit <- expand.grid(t=1:72, model=c('constant.piecewise', 'linear.piecewise', 'power.piecewise', 'exponential.piecewise'))
