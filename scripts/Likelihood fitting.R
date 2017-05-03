@@ -206,9 +206,9 @@ fake.data <- data.frame(t=1:72)
 fake.data$difference <- sapply(fake.data$t,function(x){ return(exponential.piecewise.model.predict(x, -200, -100, -1, 40, 400, -400, -1)) })
 plot(difference ~ t, data=fake.data)
 ## run test case ####
-which.subject <- 185
+which.subject <- 14
 subject.data <- subset(model.data, subject==which.subject)
-subject.data <- fake.data
+#subject.data <- fake.data
 fit <- subject.fit.MLE(subject.data)
 
 line.fit <- expand.grid(t=1:72, model=c('constant.piecewise', 'linear.piecewise', 'power.piecewise', 'exponential.piecewise'))
