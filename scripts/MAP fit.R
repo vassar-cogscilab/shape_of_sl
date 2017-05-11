@@ -6,13 +6,12 @@ model.data <- read.csv('generated_data/extracted-data-niw.csv')
 
 ##likelihood Normal, equal sd##
 
-log.likelihood<-function(x,mu){
-  sigma=10
+log.likelihood<-function(x, mu, sigma){
   return(dnorm(x,mu,sigma,log=T))
 }
 
-likelihood<-function(data, mu){
-  log.lik<-sum(mapply(log.likelihood,data,mu))
+likelihood<-function(data, mu, sigma){
+  log.lik<-sum(mapply(log.likelihood,data, mu, sigma))
   return(log.lik)
 }
 
@@ -37,10 +36,10 @@ power.model.predict<-function(t,a,b,c){
 }
 constant.piecewise.model.predict<-function(t,a,b,c){
   if(t<c){
-    rt<-a
+    rt<- a
   }
   if(t>=c){
-    rt<-b
+    rt<- a + b
   }
   return(rt)
 }
@@ -82,9 +81,11 @@ subject.fit.MLE<-function(subject.data){
   constant.fit<-function(params){
     t<-subject.data$t
     a<-params[1]
+    sigma <- params[2]
+    a.log.lik <- -dnorm(a, mean=0, sd=500, log=T)
     subject.data$model.predict<-mapply(constant.model.predict,a)
-    lik<-likelihood(subject.data$difference, subject.data$model.predict)
-    return(-lik)
+    lik<-likelihood(subject.data$difference, subject.data$model.predict, sigma)
+    return(-lik + a.log.lik)
   }
   
   linear.fit<-function(params){
@@ -122,9 +123,13 @@ subject.fit.MLE<-function(subject.data){
     a<-params[1]
     b<-params[2]
     c<-params[3]
+    sigma <- params[4]
+    a.log.lik <- -dnorm(a, mean=0, sd=500, log=T)
+    b.log.lik <- -dgamma(b, shape=2.618034, rate=0.00809017, log=T)
+    c.log.lik <- -log(1/72)
     subject.data$model.predict<-mapply(constant.piecewise.model.predict,t,a,b,c)
-    lik<-likelihood(subject.data$difference, subject.data$model.predict)
-    return(-lik)
+    lik<-likelihood(subject.data$difference, subject.data$model.predict, sigma)
+    return(-lik + a.log.lik + b.log.lik + c.log.lik)
   }
   
   linear.piecewise.fit<-function(params){
@@ -169,33 +174,33 @@ subject.fit.MLE<-function(subject.data){
     return(-lik)
   }
   
-  # constant<-DEoptim(constant.fit, lower=c(-2001),upper=c(2001))
+  constant<-DEoptim(constant.fit, lower=c(-2001, 10),upper=c(2001, 1000))
   # linear<-DEoptim(linear.fit,lower=c(-2001, -27),upper=c(2001,27))
   # exponential<-DEoptim(exponential.fit,lower=c(-2001,-5,-1),upper=c(2001,5,0))
   # power<-DEoptim(power.fit,lower=c(-2001,-5,-1),upper=c(2001,0,0))
-  constant.piecewise    <- DEoptim(constant.piecewise.fit,    lower = c(-2001,-2001,0),                          upper=c(2001,2001,72))
-  linear.piecewise      <- DEoptim(linear.piecewise.fit,      lower = c(-2001, 0, 0,-2001, 0),                  upper=c(2001,27,72,2001,27))
-  exponential.piecewise <- DEoptim(exponential.piecewise.fit, lower = c(-2001,-1000, -25, 0, -2001, -1000, -25), upper=c(2001,0,0,72,2001,0,0))
-  power.piecewise       <- DEoptim(power.piecewise.fit,       lower = c(-2001,-1000, -25, 0, -2001, -1000, -25), upper=c(2001,0,0,72,2001,0,0))
+  constant.piecewise    <- DEoptim(constant.piecewise.fit,    lower = c(-2001,-2001,0, 10),                          upper=c(2001,2001,72, 1000), fnMap=function(params){ params[3] = round(params[3]); return(params)})
+  # linear.piecewise      <- DEoptim(linear.piecewise.fit,      lower = c(-2001, 0, 0,-2001, 0),                  upper=c(2001,27,72,2001,27))
+  # exponential.piecewise <- DEoptim(exponential.piecewise.fit, lower = c(-2001,-1000, -25, 0, -2001, -1000, -25), upper=c(2001,0,0,72,2001,0,0))
+  # power.piecewise       <- DEoptim(power.piecewise.fit,       lower = c(-2001,-1000, -25, 0, -2001, -1000, -25), upper=c(2001,0,0,72,2001,0,0))
   
-  # constant.values<-list('intercept'=constant$optim$bestmem[1], 'Likelihood'=constant$optim$bestval)
+  constant.values<-list('intercept'=constant$optim$bestmem[1], 'sigma'=constant$optim$bestmem[2], 'Likelihood'=constant$optim$bestval)
   # linear.values<-list ('intercept'=linear$optim$bestmem[1],'slope'=linear$optim$bestmem[2], 'Likelihood'=linear$optim$bestval)
   # exponential.values<-list('intercept'=exponential$optim$bestmem[1], 'base'= exponential$optim$bestmem[2],'rate'=exponential$optim$bestmem[3], 'Likelihood'=exponential$optim$bestval)
   # power.values<-list('intercept'=power$optim$bestmem[1],'base'=power$optim$bestmem[2],'rate'=power$optim$bestmem[3],'Likelihood'=power$optim$bestval)
-  constant.piecewise.values<-list('intercept'=constant.piecewise$optim$bestmem[1],'intercept.2'=constant.piecewise$optim$bestmem[2],'split'=constant.piecewise$optim$bestmem[3], 'Likelihood'=constant.piecewise$optim$bestval)
-  linear.piecewise.values<-list('intercept'=linear.piecewise$optim$bestmem[1], 'slope'=linear.piecewise$optim$bestmem[2], 'split'= linear.piecewise$optim$bestmem[3],'intercept.2'=linear.piecewise$optim$bestmem[4], 'slope.2'=linear.piecewise$optim$bestmem[5],  'Likelihood'=linear.piecewise$optim$bestval)
-  exponential.piecewise.values<-list('intercept'=exponential.piecewise$optim$bestmem[1],'base'=exponential.piecewise$optim$bestmem[2], 'rate'=exponential.piecewise$optim$bestmem[3],'split'=exponential.piecewise$optim$bestmem[4],'intercept.2'= exponential.piecewise$optim$bestmem[5], 'base.2'=exponential.piecewise$optim$bestmem[6],'rate.2'=exponential.piecewise$optim$bestmem[7],   'Likelihood'=exponential.piecewise$optim$bestval)
-  power.piecewise.values<-list('intercept'=power.piecewise$optim$bestmem[1], 'base' = power.piecewise$optim$bestmem[2], 'rate'=power.piecewise$optim$bestmem[3],'split'=power.piecewise$optim$bestmem[4],'intercept.2'= power.piecewise$optim$bestmem[5], 'base.2'=power.piecewise$optim$bestmem[6], 'rate.2'=power.piecewise$optim$bestmem[7],'Likelihood'=power.piecewise$optim$bestval)
+  constant.piecewise.values<-list('intercept'=constant.piecewise$optim$bestmem[1],'intercept.2'=constant.piecewise$optim$bestmem[2],'split'=constant.piecewise$optim$bestmem[3], 'sigma'=constant.piecewise$optim$bestmem[4], 'Likelihood'=constant.piecewise$optim$bestval)
+  # linear.piecewise.values<-list('intercept'=linear.piecewise$optim$bestmem[1], 'slope'=linear.piecewise$optim$bestmem[2], 'split'= linear.piecewise$optim$bestmem[3],'intercept.2'=linear.piecewise$optim$bestmem[4], 'slope.2'=linear.piecewise$optim$bestmem[5],  'Likelihood'=linear.piecewise$optim$bestval)
+  # exponential.piecewise.values<-list('intercept'=exponential.piecewise$optim$bestmem[1],'base'=exponential.piecewise$optim$bestmem[2], 'rate'=exponential.piecewise$optim$bestmem[3],'split'=exponential.piecewise$optim$bestmem[4],'intercept.2'= exponential.piecewise$optim$bestmem[5], 'base.2'=exponential.piecewise$optim$bestmem[6],'rate.2'=exponential.piecewise$optim$bestmem[7],   'Likelihood'=exponential.piecewise$optim$bestval)
+  # power.piecewise.values<-list('intercept'=power.piecewise$optim$bestmem[1], 'base' = power.piecewise$optim$bestmem[2], 'rate'=power.piecewise$optim$bestmem[3],'split'=power.piecewise$optim$bestmem[4],'intercept.2'= power.piecewise$optim$bestmem[5], 'base.2'=power.piecewise$optim$bestmem[6], 'rate.2'=power.piecewise$optim$bestmem[7],'Likelihood'=power.piecewise$optim$bestval)
   
   out <-list(
-    # 'constant'=constant.values,
+    constant=constant.values,
     # 'linear'=linear.values,
     # 'exponential'=exponential.values,
     # 'power'=power.values,
-    constant.piecewise=constant.piecewise.values,
-    linear.piecewise=linear.piecewise.values,
-    power.piecewise=power.piecewise.values,
-    exponential.piecewise=exponential.piecewise.values
+    constant.piecewise=constant.piecewise.values
+    # linear.piecewise=linear.piecewise.values,
+    # power.piecewise=power.piecewise.values,
+    # exponential.piecewise=exponential.piecewise.values
   )
   
   return(out)
@@ -206,7 +211,7 @@ subject.fit.MLE<-function(subject.data){
 # fake.data$difference <- sapply(fake.data$t,function(x){ return(exponential.piecewise.model.predict(x, -200, -100, -1, 40, 400, -400, -1)) })
 # plot(difference ~ t, data=fake.data)
 all.subject.fits <- list()
-for(i in 1:3){
+for(i in 201){
   ## run test case ####
   which.subject <- i
   subject.data <- subset(model.data, subject==which.subject)
@@ -215,6 +220,8 @@ for(i in 1:3){
   fit$subject_id <- i
   all.subject.fits[[i]] <- fit
 }
+
+ggplot(subset(model.data, subject==201), aes(x=t, y=difference)) + geom_point()
 
 # 
 # line.fit <- expand.grid(t=1:72, model=c('constant.piecewise', 'linear.piecewise', 'power.piecewise', 'exponential.piecewise'))
