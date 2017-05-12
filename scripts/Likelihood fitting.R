@@ -173,10 +173,10 @@ subject.fit.MLE<-function(subject.data){
   # linear<-DEoptim(linear.fit,lower=c(-2001, -27),upper=c(2001,27))
   # exponential<-DEoptim(exponential.fit,lower=c(-2001,-5,-1),upper=c(2001,5,0))
   # power<-DEoptim(power.fit,lower=c(-2001,-5,-1),upper=c(2001,0,0))
-  constant.piecewise    <- DEoptim(constant.piecewise.fit,    lower = c(-2001,-2001,0),                          upper=c(2001,2001,72))
-  linear.piecewise      <- DEoptim(linear.piecewise.fit,      lower = c(-2001, 0, 0,-2001, 0),                  upper=c(2001,27,72,2001,27))
-  exponential.piecewise <- DEoptim(exponential.piecewise.fit, lower = c(-2001,-1000, -25, 0, -2001, -1000, -25), upper=c(2001,0,0,72,2001,0,0))
-  power.piecewise       <- DEoptim(power.piecewise.fit,       lower = c(-2001,-1000, -25, 0, -2001, -1000, -25), upper=c(2001,0,0,72,2001,0,0))
+  constant.piecewise    <- DEoptim(constant.piecewise.fit,    lower = c(-2001,-2001,0),                          upper=c(2001,2001,72), fnMap=function(params){params[3]<-round(params[3]); return(params)})
+  linear.piecewise      <- DEoptim(linear.piecewise.fit,      lower = c(-2001, 0, 0,-2001, 0),                  upper=c(2001,27,72,2001,27), fnMap=function(params){params[3]<-round(params[3]); return(params)})
+  exponential.piecewise <- DEoptim(exponential.piecewise.fit, lower = c(-2001,-1000, -25, 0, -2001, -1000, -25), upper=c(2001,0,0,72,2001,0,0), fnMap=function(params){params[4]<-round(params[4]); return(params)})
+  power.piecewise       <- DEoptim(power.piecewise.fit,       lower = c(-2001,-1000, -25, 0, -2001, -1000, -25), upper=c(2001,0,0,72,2001,0,0),fnMap=function(params){params[4]<-round(params[4]); return(params)})
   
   # constant.values<-list('intercept'=constant$optim$bestmem[1], 'Likelihood'=constant$optim$bestval)
   # linear.values<-list ('intercept'=linear$optim$bestmem[1],'slope'=linear$optim$bestmem[2], 'Likelihood'=linear$optim$bestval)
@@ -215,7 +215,7 @@ for(i in 1:3){
   fit$subject_id <- i
   all.subject.fits[[i]] <- fit
 }
-
+all.subject.fits
 # 
 # line.fit <- expand.grid(t=1:72, model=c('constant.piecewise', 'linear.piecewise', 'power.piecewise', 'exponential.piecewise'))
 # 
