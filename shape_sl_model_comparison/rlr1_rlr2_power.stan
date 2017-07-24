@@ -38,7 +38,7 @@ parameters{
   real <lower = 0, upper =1> rtu_delta_mean;
   real <lower = 0> rtu_learning_rate_mean;
   
-  real <lower = 0> rlr_initial_mean;
+  real <lower = 0> rlr1_initial_mean;
   
   real <lower = 0> rlr2_initial_mean;
   real <lower = 0> rlr2_delta_mean;
@@ -48,7 +48,7 @@ parameters{
   real <lower = 0, upper =1> rtu_delta_var;
   real <lower = 0> rtu_learning_rate_var;
   
-  real <lower = 0> rlr_initial_var;
+  real <lower = 0> rlr1_initial_var;
   
   real <lower = 0> rlr2_initial_var;
   real <lower = 0> rlr2_delta_var;
@@ -59,15 +59,24 @@ transformed parameters{
   real <lower = 0> rlr1_mu[N];
   real <lower = 0> rlr2_mu[N];
   real <lower =0> rt_mu[N];
-  
+  real <upper = 0> rlr2_learning_rate_transform[J];
+  real <upper = 0> rtu_learning_rate_transform[J];
+
   vector<lower = 0>[2] log_q_z[J];
   
   for(j in 1:J){
+  
+
+    
   log_q_z[j] =  log(theta)
                 + normal_lpdf(rlr1_initial[j]|rlr1_initial_mean,rlr1_initial_var)
                 + normal_lpdf(rlr2_initial[j]|rlr2_initial_mean,rlr2_initial_var)
                 + normal_lpdf(rlr2_delta[j]|rlr2_delta_mean,rlr2_delta_var)
-                + normal_lpdf((-rlr2_learning_rate[j])|rlr2_learning_rate_mean,rlr2_learning_rate_var);
+                + normal_lpdf(rlr2_learning_rate[j]|rlr2_learning_rate_mean,rlr2_learning_rate_var);
+                
+                
+                rlr2_learning_rate_transform[j] = -rlr2_learning_rate[j];
+                rtu_learning_rate_transform[j] = - rtu_learning_rate[j];
   }
   
   for(n in 1:N){
@@ -77,7 +86,7 @@ transformed parameters{
   if(pp[n] == 1){
     
     rlr1[n] = rlr1_initial[jj[n]] * rt_mu[n];
-    rlr2[n] = rlr2_initial[jj[n]] * (rlr2_delta[jj[n]] * (ii[n]^ (rlr2_learning_rate[jj[n]]) - 1))) * rt_mu[n];
+    rlr2[n] = rlr2_initial[jj[n]] * (rlr2_delta[jj[n]] * (ii[n]^ (rlr2_learning_rate_transform[jj[n]]) - 1))) * rt_mu[n];
     
     
     log_q_z[jj[n],1] = log_q_z[jj[n],1] + normal_lpdf(rt[n]|rlr1[n],sigma[jj[n]]);
