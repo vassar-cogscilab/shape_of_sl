@@ -1,0 +1,43 @@
+model {
+
+# data
+for(i in 1:N){
+  rt[i] ~ sum(nr[i], ex[i])
+  nr[i] ~ dnorm(mu[i], 1/sd[i]^2)
+  ex[i] ~ dexp(tau[i])
+  mu[i] <- (1-is.predictable[i]) * (a.adapt.1[subject[i]] * (1 + b.adapt[subject[i]] * (t[i] ^ -c.adapt[subject[i]] - 1))) + is.predictable[i] * (a.adapt.2[subject[i]] * (1 + b.adapt[subject[i]] * (t[i] ^ -c.adapt[subject[i]] - 1)))
+  sd[i] <- sd.rt[subject[i]]
+  tau[i] <- (1 - is.predictable[i]) * tau.rt.1 + is.predictable[i] * tau.rt.2
+}
+
+# subject level
+for(s in 1:S){
+  a.adapt.1[s] ~ dnorm(a.adapt.mu, 1/a.adapt.sd^2)
+  a.adapt.2[s] ~ dnorm(a.adapt.mu, 1/a.adapt.sd^2)
+  b.adapt[s] ~ dbeta(b.adapt.a, b.adapt.b) # weak preference for middle values
+  c.adapt[s] ~ dgamma(c.adapt.sh, c.adapt.ra) # mode = 0.1, sd = 1.5
+  sd.rt[s] ~ dgamma(1.487922, 0.002439608) # mode = 200, sd = 500
+}
+
+# group level
+a.adapt.mu ~ dnorm(1000,250)T(0,2000)
+a.adapt.sd ~ dgamma(1.105125, 0.005256246) # mode = 20, sd = 200
+
+b.adapt.mode ~ dbeta(2,2) # weak preference for middle values
+b.adapt.concentration <- b.adapt.concentration.k + 2
+b.adapt.concentration.k ~ dgamma(1.283196, 0.05663911) # mode = 5, sd = 20
+
+b.adapt.a <- b.adapt.mode * (b.adapt.concentration-2) + 1
+b.adapt.b <- (1 - b.adapt.mode) * (b.adapt.concentration-2) + 1
+
+c.adapt.mode ~ dgamma(1.068926, 0.6892592) # mode = 0.1, sd = 1.5
+c.adapt.sd ~ dgamma(1.068926, 0.6892592) # mode = 0.1, sd = 1.5
+
+c.adapt.sh <- 1 + c.adapt.mode * c.adapt.ra
+c.adapt.ra <- (c.adapt.mode + sqrt(c.adapt.mode^2 + 4* c.adapt.sd^2)) / (2 * c.adapt.sd^2)
+
+
+tau.rt.1 ~ dgamma(1.068926, 0.6892592) # mode = 0.1, sd = 1.5
+tau.rt.2 ~ dgamma(1.068926, 0.6892592) # mode = 0.1, sd = 1.5
+
+}
