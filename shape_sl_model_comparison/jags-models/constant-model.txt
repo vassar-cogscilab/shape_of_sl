@@ -2,12 +2,12 @@ model {
 
 # data
 for(i in 1:N){
-  rt[i] ~ dsum(nr[i], ex[i])
-  n[i] ~ dnorm(mu[i], 1/sd[i]^2)
-  ex[i] ~ dexp(tau[i])
-  mu[i] <- (1-is.predictable[i]) * (a.adapt.1[subject[i]] * (1 + b.adapt[subject[i]] * t[i] ^ -c.adapt[subject[i]] - 1)) + (is.predictable[i]) * (a.adapt.2[subject[i]] * (1 + b.adapt[subject[i]] * t[i] ^ -c.adapt[subject[i]] - 1))
+  #rt[i] ~ dsum(nr[i], ex[i])
+  rt[i] ~ dnorm(mu[i], 1/sd[i]^2)
+  #ex[i] ~ dexp(tau[i])
+  mu[i] <- (1-is.predictable[i]) * (a.adapt.1[subject[i]] * (1 + b.adapt[subject[i]] * (t[i] ^ -c.adapt[subject[i]] - 1))) + is.predictable[i] * (a.adapt.2[subject[i]] * (1 + b.adapt[subject[i]] * (t[i] ^ -c.adapt[subject[i]] - 1)))
   sd[i] <- sd.rt # should these just be group-level fits?
-  tau[i] <- tau.rt
+  #tau[i] <- tau.rt
 }
 
 # subject level
@@ -36,6 +36,6 @@ c.adapt.sh <- 1 + c.adapt.mode * c.adapt.ra
 c.adapt.ra <- (c.adapt.mode + sqrt(c.adapt.mode^2 + 4* c.adapt.sd^2)) / (2 * c.adapt.sd^2)
 
 sd.rt ~ dgamma(1.487922, 0.002439608) # mode = 200, sd = 500
-tau.rt ~ dgamma(1.068926, 0.6892592) # mode = 0.1, sd = 1.5
+#tau.rt ~ dgamma(1.068926, 0.6892592) # mode = 0.1, sd = 1.5
 
 }
