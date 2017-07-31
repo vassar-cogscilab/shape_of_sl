@@ -11,8 +11,7 @@ for(i in 1:N){
   mu[i,2] <- ( 1 + b.adapt.0[subject[i]] * (t[i] ^ (-c.adapt.0[subject[i]]) - 1)) * rlr[i, z[i]+1]
   
   rlr[i,1] <- a.adapt.1[subject[i]] 
-  rlr[i,2] <- a.adapt.2[subject[i]]*((b.learn[subject[i]]-1) / (1+exp( (-c.learn[subject[i]]) *(t[i]- d.learn[subject[i]]))))
-
+  rlr[i,2] <- ifelse(t[i]<split[subject[i]],a.adapt.2[subject[i]],a.adapt.2[subject[i]]*b.learn[subject[i]])
   sd[i] <- sd.rt[subject[i]] # should these just be group-level fits?
   tau[i] <- (1 - is.predictable[i]) * tau.rt.1 + is.predictable[i] * tau.rt.2
 }
@@ -29,8 +28,7 @@ for(s in 1:S){
   b.adapt.0[s] ~ dbeta(b.adapt.0.a, b.adapt.0.b) # weak preference for middle values
   b.learn[s] ~ dbeta(b.learn.a, b.learn.b) # weak preference for middle values
   c.adapt.0[s] ~ dgamma(c.adapt.0.sh, c.adapt.0.ra) # mode = 0.1, sd = 1.5
-  c.learn[s] ~ dgamma(c.learn.sh, c.learn.ra) # mode = 0.1, sd = 1.5
-  d.learn[s] ~ dgamma(d.learn.sh,d.learn.ra)T(0,72)
+  split[s] ~ dgamma(split.sh,split.ra)T(0,72)
   
 }
 
@@ -64,18 +62,11 @@ b.learn.concentration.k ~ dgamma(1.283196, 0.05663911) # mode = 5, sd = 20
 b.learn.a <- b.learn.mode * (b.learn.concentration-2) + 1
 b.learn.b <- (1 - b.learn.mode) * (b.learn.concentration-2) + 1
 
+split.mode ~ dgamma(5.041652, 0.1122681) # mode = 36, sd = 20
+split.sd ~ dgamma(2.618034, 0.1618034) # mode = 10, sd = 10
 
-c.learn.mode ~ dgamma(1.220998,  0.7366584) # mode = 0.3, sd = 1.5
-c.learn.sd ~ dgamma(1.068926, 0.6892592) # mode = 0.1, sd = 1.5
-
-c.learn.sh <- 1 + c.learn.mode * c.learn.ra
-c.learn.ra <- (c.learn.mode + sqrt(c.learn.mode^2 + 4* c.learn.sd^2)) / (2 * c.learn.sd^2)
-
-d.learn.mode ~ dunif(0,72)
-d.learn.sd ~ dgamma(2.618034, 0.1618034) # mode = 10, sd = 10
-
-d.learn.sh <- 1 + d.learn.mode * d.learn.ra
-d.learn.ra <- (d.learn.mode + sqrt(d.learn.mode^2 + 4* d.learn.sd^2)) / (2 * d.learn.sd^2)
+split.sh <- 1 + split.mode * split.ra
+split.ra <- (split.mode + sqrt(split.mode^2 + 4* split.sd^2)) / (2 * split.sd^2)
 
 p.mode ~ dbeta(1,1)
 p.concentration <- p.concentration.k + 2
