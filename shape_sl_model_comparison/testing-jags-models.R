@@ -44,8 +44,7 @@ posterior.check <- function(subj, samples){
       }, colour='blue', alpha=0.3)
     )
   }
-  print(overlay.list)
   p + overlay.list
 }
 
-posterior.check(6, 4)
+posterior.check(10, 4)

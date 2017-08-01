@@ -21,17 +21,13 @@ data.for.jags <- list(
 )
 
 params.to.monitor <- c('sd.rt', 'tau.rt', 'a.adapt.1', 'a.adapt.2', 'b.adapt', 'c.adapt')
-
 params.to.monitor <- c('sd.rt', 'tau.rt.1','tau.rt.2', 'a.adapt.1', 'a.adapt.2', 'b.adapt.1', 'c.adapt.1', 'b.adapt.2', 'c.adapt.2')
 params.to.monitor <- c('sd.rt', 'tau.rt.1','tau.rt.2', 'a.adapt.1', 'a.adapt.2', 'a.adapt.3', 'b.adapt.1', 'c.adapt.1', 'b.adapt.2', 'c.adapt.2', 'p','z')
 
 jags.result <- run.jags('jags-models/constant-power-model.txt', monitor=params.to.monitor, data=data.for.jags, n.chains=2,
-         burnin=5000, sample=10000, adapt=5000)
+         burnin=1000, sample=1000, adapt=1000)
 
 result <- as.matrix(as.mcmc(jags.result))
-
-
-
 
 posterior.check <- function(subj, samples){
   p <- ggplot(jags.constant.model.test %>% filter(subject==subj), aes(x=t, y=rt, colour=factor(is.predictable)))+geom_point()+theme_bw()
