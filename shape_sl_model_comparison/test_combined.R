@@ -27,7 +27,7 @@ data.for.jags <- list(
   S = length(unique(jags.model$subject))
 )
 
-length(data.for.jags)
+
   
   params.to.monitor <- c('sd.rt',
                                             'tau.rt.1','tau.rt.2', 
@@ -36,7 +36,9 @@ length(data.for.jags)
                                             'b.logistic','c.logistic','d.logistic',
                                             'b.power','c.power',
                                             'b.constant.piecewise', 'split', 
-                                            'p', 'learn','z', 'prob','alpha')
+                                            'p', 'learn','z', 'prob')
+  
+
   
   jags.result <- run.jags('jags-models/combined-model.txt', monitor=params.to.monitor, data=data.for.jags, n.chains=2,
-                          burnin=100, sample=500, adapt=100)
+                          burnin=500, sample=1000, adapt=500)
