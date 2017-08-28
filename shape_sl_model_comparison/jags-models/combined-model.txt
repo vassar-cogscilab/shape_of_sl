@@ -10,7 +10,7 @@ for(i in 1:N){
   mu[i,1] <- a.adapt.0[subject[i]] * (1 + b.adapt.0[subject[i]] * (t[i] ^ (-c.adapt.0[subject[i]]) - 1))
   
   
-  mu[i,2] <- a.adapt.1[subject[i]] * (1 + b.adapt.0[subject[i]] * (t[i] ^ (-c.adapt.0[subject[i]]) - 1)) * rlr[i, learner[subject[i]]]
+  mu[i,2] <- a.adapt.1[subject[i]] * (1 + b.adapt.0[subject[i]] * (t[i] ^ (-c.adapt.0[subject[i]]) - 1)) * rlr[i, learner[subject[i]]+1]
   
   rlr[i,1] <- 1
   rlr[i,2] <- shape[i,z]
