@@ -1,0 +1,138 @@
+model{
+
+#data
+
+for(i in 1:N){
+  rt[i] ~ sum(nr[i], ex[i])
+  nr[i] ~ dnorm(mu[i,is.predictable[i]+1], 1/sd[i]^2)
+  ex[i] ~ dexp(tau[i])
+
+  mu[i,1] <- a.adapt.0[subject[i]] * (1 + b.adapt.0[subject[i]] * (t[i] ^ (-c.adapt.0[subject[i]]) - 1))
+  
+  
+  mu[i,2] <- a.adapt.1[subject[i]] * (1 + b.adapt.0[subject[i]] * (t[i] ^ (-c.adapt.0[subject[i]]) - 1)) * rlr[i, learner[subject[i]]+1]
+  
+  rlr[i,1] <- 1
+  rlr[i,2] <- shape[i,z]
+  
+  shape[i,1]<- 1 + (-b.logistic[subject[i]]) / (1+exp(-c.logistic[subject[i]] * (t[i]- d.logistic[subject[i]])))
+  shape[i,2]<- 1 + b.power[subject[i]] * (t[i] ^ -c.power[subject[i]] - 1)
+  
+  t.switch[i] <- step(t[i] - split[subject[i]])
+  shape[i,3]<- t.switch[i]*b.constant.piecewise[subject[i]] + (1-t.switch[i])
+
+
+
+  sd[i] <- sd.rt[subject[i]] # should these just be group-level fits?
+  tau[i] <- (1 - is.predictable[i]) * tau.rt.1 + is.predictable[i] * tau.rt.2
+}
+
+# subject level
+for(s in 1:S){
+
+  learner[s] ~ dbern(p[s])
+  p[s] ~ dbeta(p.a,p.b)
+  
+  sd.rt[s] ~ dgamma(1.487922, 0.002439608) # mode = 200, sd = 500
+  
+  a.adapt.0[s] ~ dnorm(a.adapt.0.mu, 1/a.adapt.0.sd^2)
+
+  b.adapt.0[s] ~ dbeta(b.adapt.0.a, b.adapt.0.b)
+  c.adapt.0[s] ~ dgamma(c.adapt.0.sh, c.adapt.0.ra)
+  
+  a.adapt.1[s] ~ dnorm(a.adapt.1.mu, 1/a.adapt.1.sd^2)
+  
+  b.logistic[s] ~ dbeta(b.logistic.a, b.logistic.b) 
+  c.logistic[s] ~ dgamma(c.logistic.sh, c.logistic.ra) 
+  d.logistic[s] ~ dgamma(d.logistic.sh,d.logistic.ra)T(0,72)
+  
+  b.power[s] ~ dbeta(b.power.a, b.power.b) 
+  c.power[s] ~ dgamma(c.power.sh, c.power.ra)
+  
+  
+  b.constant.piecewise[s] ~ dbeta(b.constant.piecewise.a, b.constant.piecewise.b) 
+  split[s] ~ dgamma(split.sh,split.ra)T(0,72)
+}
+
+
+#group level
+a.adapt.0.mu ~ dnorm(1000,250)T(0,2000)
+a.adapt.0.sd ~ dgamma(1.105125, 0.005256246) # mode = 20, sd = 200
+
+a.adapt.1.mu ~ dnorm(1000,250)T(0,2000)
+a.adapt.1.sd ~ dgamma(1.105125, 0.005256246) # mode = 20, sd = 200
+
+b.adapt.0.mode ~ dbeta(2,2) # weak preference for middle values
+b.adapt.0.concentration <- b.adapt.0.concentration.k + 2
+b.adapt.0.concentration.k ~ dgamma(1.283196, 0.05663911) # mode = 5, sd = 20
+
+b.adapt.0.a <- b.adapt.0.mode * (b.adapt.0.concentration-2) + 1
+b.adapt.0.b <- (1 - b.adapt.0.mode) * (b.adapt.0.concentration-2) + 1
+
+c.adapt.0.mode ~ dgamma(1.068926, 0.6892592) # mode = 0.1, sd = 1.5
+c.adapt.0.sd ~ dgamma(1.068926, 0.6892592) # mode = 0.1, sd = 1.5
+
+c.adapt.0.sh <- 1 + c.adapt.0.mode * c.adapt.0.ra
+c.adapt.0.ra <- (c.adapt.0.mode + sqrt(c.adapt.0.mode^2 + 4* c.adapt.0.sd^2)) / (2 * c.adapt.0.sd^2)
+
+b.logistic.mode ~ dbeta(2,2) # weak preference for middle values
+b.logistic.concentration <- b.logistic.concentration.k + 2
+b.logistic.concentration.k ~ dgamma(1.283196, 0.05663911) # mode = 5, sd = 20
+
+b.logistic.a <- b.logistic.mode * (b.logistic.concentration-2) + 1
+b.logistic.b <- (1 - b.logistic.mode) * (b.logistic.concentration-2) + 1
+
+
+c.logistic.mode ~ dgamma(1.068926, 0.6892592) # mode = 0.1, sd = 1.5
+c.logistic.sd ~ dgamma(1.068926, 0.6892592) # mode = 0.1, sd = 1.5
+
+c.logistic.sh <- 1 + c.logistic.mode * c.logistic.ra
+c.logistic.ra <- (c.logistic.mode + sqrt(c.logistic.mode^2 + 4* c.logistic.sd^2)) / (2 * c.logistic.sd^2)
+
+d.logistic.mode ~ dunif(0,72)
+d.logistic.sd ~ dgamma(2.618034, 0.1618034) # mode = 10, sd = 10
+
+d.logistic.sh <- 1 + d.logistic.mode * d.logistic.ra
+d.logistic.ra <- (d.logistic.mode + sqrt(d.logistic.mode^2 + 4* d.logistic.sd^2)) / (2 * d.logistic.sd^2)
+
+b.power.mode ~ dbeta(2,2) # weak preference for middle values
+b.power.concentration <- b.power.concentration.k + 2
+b.power.concentration.k ~ dgamma(1.283196, 0.05663911) # mode = 5, sd = 20
+
+b.power.a <- b.power.mode * (b.power.concentration-2) + 1
+b.power.b <- (1 - b.power.mode) * (b.power.concentration-2) + 1
+
+
+c.power.mode ~ dgamma(1.068926, 0.6892592) # mode = 0.1, sd = 1.5
+c.power.sd ~ dgamma(1.068926, 0.6892592) # mode = 0.1, sd = 1.5
+
+c.power.sh <- 1 + c.power.mode * c.power.ra
+c.power.ra <- (c.power.mode + sqrt(c.power.mode^2 + 4* c.power.sd^2)) / (2 * c.power.sd^2)
+
+b.constant.piecewise.mode ~ dbeta(2,2) # weak preference for middle values
+b.constant.piecewise.concentration <- b.constant.piecewise.concentration.k + 2
+b.constant.piecewise.concentration.k ~ dgamma(1.283196, 0.05663911) # mode = 5, sd = 20
+
+b.constant.piecewise.a <- b.constant.piecewise.mode * (b.constant.piecewise.concentration-2) + 1
+b.constant.piecewise.b <- (1 - b.constant.piecewise.mode) * (b.constant.piecewise.concentration-2) + 1
+
+split.mode ~ dgamma(5.041652, 0.1122681) # mode = 36, sd = 20
+split.sd ~ dgamma(2.618034, 0.1618034) # mode = 10, sd = 10
+
+split.sh <- 1 + split.mode * split.ra
+split.ra <- (split.mode + sqrt(split.mode^2 + 4* split.sd^2)) / (2 * split.sd^2)
+
+
+p.mode ~ dbeta(1,1)
+p.concentration <- p.concentration.k + 2
+p.concentration.k ~ dgamma(1.283196, 0.05663911) # mode = 5, sd = 20
+
+p.a <- p.mode * (p.concentration-2) + 1
+p.b <- (1 - p.mode) * (p.concentration-2) + 1
+
+z ~ dcat(prob)
+prob ~ ddirch(c(1/3,1/3,1/3))
+
+tau.rt.1 ~ dgamma(1.068926, 0.6892592) # mode = 0.1, sd = 1.5
+tau.rt.2 ~ dgamma(1.068926, 0.6892592) # mode = 0.1, sd = 1.5
+}
