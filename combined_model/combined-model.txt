@@ -8,16 +8,16 @@ for(i in 1:N){
   ex[i] ~ dexp(tau[i])
 
   mu[i,1] <- a.adapt.0[subject[i]] * (1 + b.adapt.0[subject[i]] * (t[i] ^ (-c.adapt.0[subject[i]]) - 1))
-  
-  
+
+
   mu[i,2] <- a.adapt.1[subject[i]] * (1 + b.adapt.0[subject[i]] * (t[i] ^ (-c.adapt.0[subject[i]]) - 1)) * rlr[i, learner[subject[i]]+1]
-  
+
   rlr[i,1] <- 1
   rlr[i,2] <- shape[i,z]
-  
+
   shape[i,1]<- 1 + (-b.logistic[subject[i]]) / (1+exp(-c.logistic[subject[i]] * (t[i]- d.logistic[subject[i]])))
   shape[i,2]<- 1 + b.power[subject[i]] * (t[i] ^ -c.power[subject[i]] - 1)
-  
+
   t.switch[i] <- step(t[i] - split[subject[i]])
   shape[i,3]<- t.switch[i]*b.constant.piecewise[subject[i]] + (1-t.switch[i])
 
@@ -32,25 +32,25 @@ for(s in 1:S){
 
   learner[s] ~ dbern(p[s])
   p[s] ~ dbeta(p.a,p.b)
-  
+
   sd.rt[s] ~ dgamma(1.487922, 0.002439608) # mode = 200, sd = 500
-  
+
   a.adapt.0[s] ~ dnorm(a.adapt.0.mu, 1/a.adapt.0.sd^2)
 
   b.adapt.0[s] ~ dbeta(b.adapt.0.a, b.adapt.0.b)
   c.adapt.0[s] ~ dgamma(c.adapt.0.sh, c.adapt.0.ra)
-  
+
   a.adapt.1[s] ~ dnorm(a.adapt.1.mu, 1/a.adapt.1.sd^2)
-  
-  b.logistic[s] ~ dbeta(b.logistic.a, b.logistic.b) 
-  c.logistic[s] ~ dgamma(c.logistic.sh, c.logistic.ra) 
+
+  b.logistic[s] ~ dbeta(b.logistic.a, b.logistic.b)
+  c.logistic[s] ~ dgamma(c.logistic.sh, c.logistic.ra)
   d.logistic[s] ~ dgamma(d.logistic.sh,d.logistic.ra)T(0,72)
-  
-  b.power[s] ~ dbeta(b.power.a, b.power.b) 
+
+  b.power[s] ~ dbeta(b.power.a, b.power.b)
   c.power[s] ~ dgamma(c.power.sh, c.power.ra)
-  
-  
-  b.constant.piecewise[s] ~ dbeta(b.constant.piecewise.a, b.constant.piecewise.b) 
+
+
+  b.constant.piecewise[s] ~ dbeta(b.constant.piecewise.a, b.constant.piecewise.b)
   split[s] ~ dgamma(split.sh,split.ra)T(0,72)
 }
 
@@ -131,7 +131,8 @@ p.a <- p.mode * (p.concentration-2) + 1
 p.b <- (1 - p.mode) * (p.concentration-2) + 1
 
 z ~ dcat(prob)
-prob ~ ddirch(c(1/3,1/3,1/3))
+prob ~ ddirch(prob.prior)
+prob.prior <- c(1/3,1/3,1/3)
 
 tau.rt.1 ~ dgamma(1.068926, 0.6892592) # mode = 0.1, sd = 1.5
 tau.rt.2 ~ dgamma(1.068926, 0.6892592) # mode = 0.1, sd = 1.5
